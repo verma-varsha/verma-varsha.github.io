@@ -6,7 +6,7 @@ email:       varsha.verma.eee15@itbhu.ac.in
 author:      Varsha Verma
 description: "Welcome to my sanctuary of thoughts."
 baseurl:     ""
-url:         "verma_varsha.github.io/"
+url:         "https://verma-varsha.github.io/"
 date_format: "%b %-d, %Y"
 
 # Google services
