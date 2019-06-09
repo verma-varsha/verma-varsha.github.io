@@ -3,8 +3,49 @@
   <channel>
     <title>Varsha Verma</title>
     <description>Welcome to my sanctuary of thoughts.</description>
-    <link>http://localhost:4000/junior-theme//</link>
-    <atom:link href="http://localhost:4000/junior-theme//feed.xml" rel="self" type="application/rss+xml" />
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
+    
+      <item>
+        <title>Outreachy | A Quick Dissection of my project at Openstack Ironic</title>
+        <description>&lt;p&gt;It’s only been three weeks since I embarked on my Outreachy internship at Openstack and I already feel like my brain has evolved so much in terms of the tremendous amount of learning that has taken place the past few weeks. This post is aimed at sharing some of that knowledge with my fellow readers.&lt;/p&gt;
+
+&lt;p&gt;Before we begin, let me give you a bit introduction about the organization that I am working with: &lt;strong&gt;Openstack&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;OpenStack is a set of open source, scalable software tools for building and managing cloud computing platforms for public and private clouds. OpenStack is managed by the OpenStack Foundation, a non-profit that oversees both development and community-building around the project.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;There are many teams working on different projects under the banner of Openstack, one of which is &lt;strong&gt;Ironic&lt;/strong&gt;. Openstack Ironic is a set of projects that perform bare metal (no underlying hypervisor) provisioning in use cases where a virtualized environment might be inappropriate and a user would perfer to have an actual, physical, bare-metal server. Thus, bare metal provisioning means a customer can use hardware directly, deploying the workload (image) onto a real physical machine instead of a virtualized instance on a hypervisor.&lt;/p&gt;
+
+&lt;p&gt;The title for the project that I am working on is:&lt;/p&gt;
+
+&lt;h3 id=&quot;extend-sushy-to-support-raid&quot;&gt;“Extend sushy to support RAID”&lt;/h3&gt;
+
+&lt;p&gt;Reading the topic, the first word that easily catches one’s attention is &lt;code class=&quot;highlighter-rouge&quot;&gt;RAID&lt;/code&gt;. RAID is an acronym for Redundant Array of Independent Disks. It is a technique of storing the same data in different places on multiple disks instead of a  single disk for increased I/O performance, data storage reliability or both. There are different RAID levels that use a mix/match of striping, parity or mirroring, each optimized for a specific situation.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Sushy&lt;/code&gt; is a client side Python library used by Ironic to communicate with Redfish based systems. &lt;code class=&quot;highlighter-rouge&quot;&gt;Redfish&lt;/code&gt; refers to a standard RESTful API offered by DMTF to get and set hardware configuration items on physical platforms. In short, Redfish helps us communicate with the BMCs(Baseboard Management Controller, typically a microprocessor within a computer system used to perform systems monitoring and management related tasks) on bare metal machines via JSON and OData.&lt;/p&gt;
+
+&lt;p&gt;To test and support the development of the &lt;code class=&quot;highlighter-rouge&quot;&gt;sushy&lt;/code&gt; library, a set of simple simulation tools called &lt;code class=&quot;highlighter-rouge&quot;&gt;sushy-tools&lt;/code&gt; is used, since it is not always possible to have an actual bare metal machine with Redfish at hand. The package offers two emulators, a static emulator and a dynamic emulator. The static emulator simulates a read only BMC and is a simple REST API server that responds the same things to client queries. The dynamic emulator simulates the BMC of a Redfish bare metal machine and is used to manage libvirt VMs (mimicking actual bare metal machines), resembling how a real Redfish BMC manages actual bare metal machine instances. Like it’s counterpart, the dynamic emulator also exposes REST API endpoints that can be consumed by a client using the sushy library.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://user-images.githubusercontent.com/20443665/59162360-42057380-8b0d-11e9-8634-d0bf9b5b2106.png&quot; alt=&quot;SushyDiagram&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Thus, the aim of my project is to add functionality to the existing sushy library so that the clients are able to configure RAID based volumes for storage on their bare metal instances remotely. There are two aspects to this project, one is the addition of code in the sushy library and the other is adding support for emulating the storage subsystem in sushy-tools so that we are actually able to test the added functionality in sushy against something. Since there is already one contributor working on adding RAID implementation to sushy, my task in the project involves adding the RAID support for emulation to the sushy-tools dynamic emulator (more specifically the libvirt driver).&lt;/p&gt;
+
+&lt;h4 id=&quot;challenges-faced-till-now&quot;&gt;Challenges faced till now&lt;/h4&gt;
+
+&lt;p&gt;The first task that the mentors asked me to do was to learn how to get/receive data from the libvirt VMs using sushy via the sushy-tools dynamic emulator. Honestly, the task did feel a bit intimidating to me in the beginning. I had to go back to the networking basics and brush them up. After that, I spent quite some time reading blogs and following videos on libvirt VMs. I encountered some problems while setting up/creating the VMs using the virt-install command and had to ultimately fall back to the virt-manager GUI to spin up the VMs.&lt;/p&gt;
+
+&lt;p&gt;I also wasn’t able to set up the local development environment for sushy-tools due to the absence of instructions for the same on the README. I have to admit that I thought ‘maybe the instructions aren’t mentioned because they are too obvious’ and felt a bit embarrased about them not being obvious to me. But then, I reminded myself that I am here to learn and grow so I went ahead and asked my mentor about the same who very warmly helped me out with the commands to be used for setting up the repository. After successfully setting up the environment, I even submitted a patch for adding the corresponding instructions to the docs so as to make it a bit easier for new-comers like me to start contributing to the project.&lt;/p&gt;
+
+&lt;p&gt;While working the first task, I came across some anomalies in the behaviour of the dynamic emulator which led me to digging up the code to find out what was happening. I ultimately found out that it was actually a bug and submitted a patch for the same.&lt;/p&gt;
+
+&lt;p&gt;Right now, I am working on exposing the Volume API in the dynamic emulator. There are a lot of decisions that are to be made, related to the mapping of the sushy storage resources to the libvirt VMs. I have been researching about them and am regularly having discussions with the mentors on the same and will hopefully include the final implementational mappings in my next blog post.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 09 Jun 2019 12:54:00 +0530</pubDate>
+        <link>http://localhost:4000/outreachy/openstack/2019/06/09/about-outreachy-project/</link>
+        <guid isPermaLink="true">http://localhost:4000/outreachy/openstack/2019/06/09/about-outreachy-project/</guid>
+      </item>
     
       <item>
         <title>A beginner's journey to Outreachy at Openstack</title>
@@ -68,8 +109,8 @@ I continued making contributions after submitting the final application, althoug
 &lt;/div&gt;
 </description>
         <pubDate>Tue, 28 May 2019 13:36:00 +0530</pubDate>
-        <link>http://localhost:4000/junior-theme//outreachy/openstack/2019/05/28/outreachy-first-post/</link>
-        <guid isPermaLink="true">http://localhost:4000/junior-theme//outreachy/openstack/2019/05/28/outreachy-first-post/</guid>
+        <link>http://localhost:4000/outreachy/openstack/2019/05/28/outreachy-first-post/</link>
+        <guid isPermaLink="true">http://localhost:4000/outreachy/openstack/2019/05/28/outreachy-first-post/</guid>
       </item>
     
   </channel>
