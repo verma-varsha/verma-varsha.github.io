@@ -7,6 +7,251 @@
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
     
       <item>
+        <title>XML Analysis of Libvirt Storage Pools</title>
+        <description>&lt;p&gt;While preparing for my first patch to the sushy-tools repository, I was required to do an in-depth analysis of how Libvirt provides storage managment on the physical host, the different ways of configuring a physical storage device to be used by a domain/guest/Virtual Machine and how these devices are finally reflected in the respective domain XML.&lt;/p&gt;
+
+&lt;p&gt;According to the official Libvirt documentation &lt;sup id=&quot;fnref:1&quot;&gt;&lt;a href=&quot;#fn:1&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;,&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Libvirt provides storage management on the physical host through storage pools and volumes. A storage pool is a quantity of storage set aside by an administrator, often a dedicated storage administrator, for use by virtual machines. Storage pools are divided into storage volumes either by the storage administrator or the system administrator, and the volumes are assigned to VMs as block devices.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This post will be talking about three different types of Libvirt storage pools (Directory, Filesystem and Disk Storage), primarily focussed towards how the devices configured through these pools are finally manifested in the domain XML to which they are attached.&lt;/p&gt;
+
+&lt;p&gt;On a sidenote, I used &lt;em&gt;virt-manager&lt;/em&gt; which provides a user-friendly GUI for interacting with the libvirt virtual machines for creating the storage pools and volumes &lt;sup id=&quot;fnref:2&quot;&gt;&lt;a href=&quot;#fn:2&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt; and also for attaching those volumes to different libvirt VMs &lt;sup id=&quot;fnref:3&quot;&gt;&lt;a href=&quot;#fn:3&quot; class=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;directory-pool&quot;&gt;Directory Pool&lt;/h2&gt;
+&lt;p&gt;This is a pool with type &lt;em&gt;dir&lt;/em&gt; and provides the means to manage files within a folder/directory. On the virt-manager, I configured it by providing one of the folders on my m/c as the source for the pool and created a raw storage volume within it of type &lt;em&gt;img&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;I configured a Directory pool called &lt;em&gt;testPool&lt;/em&gt; and a storage volume called &lt;em&gt;testVol1.img&lt;/em&gt; which was attached to a VM called &lt;em&gt;varshaVM1&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh pool-dumpxml testPool&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;pool&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'dir'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;testPool&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;uuid&amp;gt;&lt;/span&gt;05f3950a-95c2-49f7-bb45-0a91296e443a&lt;span class=&quot;nt&quot;&gt;&amp;lt;/uuid&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;164161908736&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;139271409664&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;available&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;24890499072&lt;span class=&quot;nt&quot;&gt;&amp;lt;/available&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/home/varsha/Documents/testPool&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;permissions&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mode&amp;gt;&lt;/span&gt;0755&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mode&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;owner&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/owner&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;group&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/group&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/permissions&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pool&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh vol-dumpxml testVol1.img --pool testPool&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;volume&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'file'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;testVol1.img&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;key&amp;gt;&lt;/span&gt;/home/varsha/Documents/testPool/testVol1.img&lt;span class=&quot;nt&quot;&gt;&amp;lt;/key&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;3221225472&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;3221229568&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;physical&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;3221225472&lt;span class=&quot;nt&quot;&gt;&amp;lt;/physical&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/home/varsha/Documents/testPool/testVol1.img&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;format&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'raw'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;permissions&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mode&amp;gt;&lt;/span&gt;0600&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mode&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;owner&amp;gt;&lt;/span&gt;0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/owner&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;group&amp;gt;&lt;/span&gt;0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/group&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/permissions&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;timestamps&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;atime&amp;gt;&lt;/span&gt;1561032566.367096192&lt;span class=&quot;nt&quot;&gt;&amp;lt;/atime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtime&amp;gt;&lt;/span&gt;1560768344.450720961&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mtime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;ctime&amp;gt;&lt;/span&gt;1561029730.460979027&lt;span class=&quot;nt&quot;&gt;&amp;lt;/ctime&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/timestamps&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/volume&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And finally, this volume was manifested on the domain xml of &lt;em&gt;varshaVM1&lt;/em&gt; (&lt;code class=&quot;highlighter-rouge&quot;&gt;virsh dumpxml varshaVM1&lt;/code&gt;) as follows:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;devices&amp;gt;&lt;/span&gt;
+...
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;disk&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'volume'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;device=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'disk'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'qemu'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'raw'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;pool=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'testPool'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;volume=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'testVol1.img'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;dev=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'vdb'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'virtio'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;address&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'pci'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;domain=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0000'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x00'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;slot=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x09'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;function=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/disk&amp;gt;&lt;/span&gt;
+...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/devices&amp;gt;&lt;/span&gt;
+...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;filesystem-pool&quot;&gt;Filesystem Pool&lt;/h2&gt;
+&lt;p&gt;This is a pool of type &lt;em&gt;fs&lt;/em&gt; and is more or less similar to a directory pool. In a filesystem pool, instead of a directory, a source block device will be mounted and files will be managed in the directory of it’s mount point. I formatted my 32GB pen drive and created a single partition for it to act as a block device for configuring a filesystem pool and created raw volumes just as done in the directory pool. &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/sdb1&lt;/code&gt; was used as a source for the pool.&lt;/p&gt;
+
+&lt;p&gt;I configured a pool called &lt;em&gt;fsPool&lt;/em&gt; and a raw storage volume called &lt;em&gt;fsVol.qcow2&lt;/em&gt; which was attached to a VM called &lt;em&gt;varshaVM1&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;The output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh pool-dumpxml fsPool&lt;/code&gt; was:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;pool&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'fs'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;fsPool&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;uuid&amp;gt;&lt;/span&gt;42a601bc-a563-4dc9-b42b-c0fc0f0f9839&lt;span class=&quot;nt&quot;&gt;&amp;lt;/uuid&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;31440814080&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;16384&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;available&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;31440797696&lt;span class=&quot;nt&quot;&gt;&amp;lt;/available&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;device&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;path=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'/dev/sdb1'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;format&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'auto'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/var/lib/libvirt/images/fsPool&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;permissions&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mode&amp;gt;&lt;/span&gt;0755&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mode&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;owner&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/owner&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;group&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/group&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/permissions&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pool&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh vol-dumpxml fsVol.qcow2 --pool fsPool&lt;/code&gt; was:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;volume&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'file'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;fsVol.qcow2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;key&amp;gt;&lt;/span&gt;/var/lib/libvirt/images/fsPool/fsVol.qcow2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/key&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;2147483648&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;2148073472&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;physical&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;2148073472&lt;span class=&quot;nt&quot;&gt;&amp;lt;/physical&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/var/lib/libvirt/images/fsPool/fsVol.qcow2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;format&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'qcow2'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;permissions&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mode&amp;gt;&lt;/span&gt;0644&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mode&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;owner&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/owner&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;group&amp;gt;&lt;/span&gt;1000&lt;span class=&quot;nt&quot;&gt;&amp;lt;/group&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/permissions&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;timestamps&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;atime&amp;gt;&lt;/span&gt;1561055113&lt;span class=&quot;nt&quot;&gt;&amp;lt;/atime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtime&amp;gt;&lt;/span&gt;1561055029&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mtime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;ctime&amp;gt;&lt;/span&gt;1561055112&lt;span class=&quot;nt&quot;&gt;&amp;lt;/ctime&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/timestamps&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;compat&amp;gt;&lt;/span&gt;1.1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/compat&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;features&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;lazy_refcounts/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/features&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/volume&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And finally, the attached volume manifested itself in the domain XML (&lt;code class=&quot;highlighter-rouge&quot;&gt;virsh dumpxml varshaVM1&lt;/code&gt;) as:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;device&amp;gt;&lt;/span&gt;
+  ...
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;disk&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'file'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;device=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'disk'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'qemu'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'qcow2'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'/var/lib/libvirt/images/fsPool/fsVol.qcow2'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;dev=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'vdd'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'virtio'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;address&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'pci'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;domain=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0000'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x00'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;slot=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0b'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;function=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/disk&amp;gt;&lt;/span&gt;
+  ...
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/device&amp;gt;&lt;/span&gt;
+...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;disk-pool&quot;&gt;Disk Pool&lt;/h2&gt;
+&lt;p&gt;This is a pool of type &lt;em&gt;disk&lt;/em&gt; and provides a pool based on a physical disk where volumes are created by adding partitions to the disk. Since I needed a physical storage device to implement a disk pool, I formatted my 32GB pen drive and created partitions on it using &lt;em&gt;fdisk&lt;/em&gt;. The physical device was found at &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/sdb&lt;/code&gt; and the partitions were found at &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/sdb1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/sdb2&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/sdb3&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I configured a Disk pool called &lt;em&gt;DiskPool&lt;/em&gt; and the automatically configured volumes were &lt;em&gt;sdb1&lt;/em&gt;, &lt;em&gt;sdb2&lt;/em&gt; and &lt;em&gt;sdb3&lt;/em&gt;. I attached the volume &lt;em&gt;sdb1&lt;/em&gt; to a VM called &lt;em&gt;varshaVM1&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;The output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh pool-dumpxml DiskPool&lt;/code&gt; was:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;pool&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'disk'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;DiskPool&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;uuid&amp;gt;&lt;/span&gt;0b60b9b2-7040-43f2-b3fb-880f422ff33b&lt;span class=&quot;nt&quot;&gt;&amp;lt;/uuid&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;31453470720&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;5368709120&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;available&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;26084697088&lt;span class=&quot;nt&quot;&gt;&amp;lt;/available&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;device&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;path=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'/dev/sdb'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;freeExtent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;start=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'32256'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;end=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'1048576'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;freeExtent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;start=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'1080832'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;end=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'2148532224'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;freeExtent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;start=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'7517241344'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;end=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'31453470720'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/device&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;format&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'dos'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/dev&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pool&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The output for &lt;code class=&quot;highlighter-rouge&quot;&gt;virsh vol-dumpxml sdb1 --pool DiskPool&lt;/code&gt; was:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;volume&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'block'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;sdb1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;key&amp;gt;&lt;/span&gt;/dev/sdb1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/key&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;device&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;path=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'/dev/sdb'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;extent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;start=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'1048576'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;end=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'2148532224'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/device&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;capacity&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;2147483648&lt;span class=&quot;nt&quot;&gt;&amp;lt;/capacity&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;allocation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allocation&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;physical&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;unit=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'bytes'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;1024&lt;span class=&quot;nt&quot;&gt;&amp;lt;/physical&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;path&amp;gt;&lt;/span&gt;/dev/sdb1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/path&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;format&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'none'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;permissions&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mode&amp;gt;&lt;/span&gt;0660&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mode&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;owner&amp;gt;&lt;/span&gt;0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/owner&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;group&amp;gt;&lt;/span&gt;6&lt;span class=&quot;nt&quot;&gt;&amp;lt;/group&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/permissions&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;timestamps&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;atime&amp;gt;&lt;/span&gt;1561032530.604694882&lt;span class=&quot;nt&quot;&gt;&amp;lt;/atime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtime&amp;gt;&lt;/span&gt;1561032530.604694882&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mtime&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;ctime&amp;gt;&lt;/span&gt;1561032530.604694882&lt;span class=&quot;nt&quot;&gt;&amp;lt;/ctime&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/timestamps&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/volume&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And finally, the attached partition &lt;code class=&quot;highlighter-rouge&quot;&gt;sdb1&lt;/code&gt; was manifested in the &lt;em&gt;varshaVM1&lt;/em&gt; domain XML (&lt;code class=&quot;highlighter-rouge&quot;&gt;virsh dumpxml varshaVM1&lt;/code&gt;) as below:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;devices&amp;gt;&lt;/span&gt;
+...
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;disk&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'block'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;device=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'disk'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'qemu'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'raw'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;cache=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'none'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;io=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'native'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;source&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;dev=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'/dev/sdb1'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;target&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;dev=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'vdc'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'virtio'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;address&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'pci'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;domain=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0000'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;bus=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x00'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;slot=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0a'&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;function=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'0x0'&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/disk&amp;gt;&lt;/span&gt;
+...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/devices&amp;gt;&lt;/span&gt;
+...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;All the XML descriptions for the various pools and volumes comply with what should actually come up for the stated types. The main reason I decided to document this is because I read multiple blogs but nowhere could I find a plausible explanation as to how the volumes attached to a VM manifests itself in the domain XML. This is something which might be of use in cases where one is trying to find out what all volumes are attached to a particular VM/domain.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:1&quot;&gt;
+      &lt;p&gt;Libvirt Storage Management Official Documentation - &lt;a href=&quot;https://libvirt.org/storage.html&quot;&gt;https://libvirt.org/storage.html&lt;/a&gt; &lt;a href=&quot;#fnref:1&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:2&quot;&gt;
+      &lt;p&gt;Manage KVM Storage Pools and Volumes - &lt;a href=&quot;https://www.tecmint.com/manage-kvm-storage-volumes-and-pools/&quot;&gt;https://www.tecmint.com/manage-kvm-storage-volumes-and-pools/&lt;/a&gt; &lt;a href=&quot;#fnref:2&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:3&quot;&gt;
+      &lt;p&gt;Adding volumes to KVM Virtual Machines - &lt;a href=&quot;https://unix.stackexchange.com/questions/92967/how-to-add-extra-disks-on-kvm-based-vm&quot;&gt;https://unix.stackexchange.com/questions/92967/how-to-add-extra-disks-on-kvm-based-vm&lt;/a&gt; &lt;a href=&quot;#fnref:3&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Thu, 20 Jun 2019 17:51:00 +0530</pubDate>
+        <link>http://localhost:4000/outreachy/openstack/2019/06/20/libvirt-pool-analysis/</link>
+        <guid isPermaLink="true">http://localhost:4000/outreachy/openstack/2019/06/20/libvirt-pool-analysis/</guid>
+      </item>
+    
+      <item>
         <title>Outreachy | A Quick Dissection of my project at Openstack Ironic</title>
         <description>&lt;p&gt;It’s only been three weeks since I embarked on my Outreachy internship at Openstack and I already feel like my brain has evolved so much in terms of the tremendous amount of learning that has taken place the past few weeks. This post is aimed at sharing some of that knowledge with my fellow readers.&lt;/p&gt;
 
