@@ -74,10 +74,10 @@ And finally, this volume was manifested on the domain xml of _varshaVM1_ (`virsh
 ...
 <devices>
 ...
-    <disk type='volume' device='disk'>
+    <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
-      <source pool='testPool' volume='testVol1.img'/>
-      <target dev='vdb' bus='virtio'/>
+      <source file='/home/varsha/Documents/testPool/testVol1.img'/>
+      <target dev='vde' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
     </disk>
 ...
